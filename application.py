@@ -31,11 +31,11 @@ load_dotenv()
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 
-app = Flask(__name__, static_folder="static")
+application = Flask(__name__, static_folder="static")
 
-app.config['SECRET_KEY'] = 'secret-key-goes-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
-db.init_app(app)
+application.config['SECRET_KEY'] = 'secret-key-goes-here'
+application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+db.init_app(application)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
@@ -43,13 +43,13 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(100))
     name = db.Column(db.String(1000))
 
-with app.app_context():
+with application.app_context():
     db.create_all()
 
 login_manager = LoginManager()
 # login_manager.login_view = 'auth.login'
 login_manager.login_view = 'login'
-login_manager.init_app(app)
+login_manager.init_app(application)
 ##########MODELS
 
 @login_manager.user_loader
@@ -57,22 +57,22 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 #MAIN
-@app.route('/')
+@application.route('/')
 def index():
     return render_template('login.html')
 
 # Static Files
-@app.route("/profile")
+@application.route("/profile")
 @login_required
 def profile():
-    return app.send_static_file("index.html")
+    return application.send_static_file("index.html")
 
-@app.route("/favicon.ico")
+@application.route("/favicon.ico")
 @login_required
 def favicon():
-    return app.send_static_file('favicon.ico')
+    return application.send_static_file('favicon.ico')
 
-@app.route("/assets/<path:path>")
+@application.route("/assets/<path:path>")
 @login_required
 def assets(path):
     return send_from_directory("static/assets", path)
@@ -131,18 +131,18 @@ def collect_user_details(request_messages):
 
     if 'username' not in conversation_state['user_details']:
         conversation_state['user_details']['username'] = request_messages[0].get('content')
-        next_response = ask_openai_question(f"Paraphrase the follow 'Hi {conversation_state['user_details']['username']}, What is your working position?'")
-        return f"Hi {conversation_state['user_details']['username']}, What is your current role?"
+        # next_response = ask_openai_question(f"Paraphrase the follow 'Hi {conversation_state['user_details']['username']}, What is your working position?'")
+        return f"Hi {conversation_state['user_details']['username']}, what is your current role?"
 
     elif 'working_position' not in conversation_state['user_details']:
         conversation_state['user_details']['working_position'] = request_messages[3].get('content')
-        next_response = ask_openai_question(f"Paraphrase the follow 'Where are you going to work at?'")
-        return 'Thank you for your input, where are you going to work at?'
+        # next_response = ask_openai_question(f"Paraphrase the follow 'Where are you going to work at?'")
+        return 'Thank you! Where is the location of the job?'
 
     elif 'working_location' not in conversation_state['user_details']:
         conversation_state['user_details']['working_location'] = request_messages[6].get('content')
-        next_response = ask_openai_question(f"Paraphrase the follow 'What is the purpose of this visit?'")
-        return 'What is the purpose of this visit?'
+        # next_response = ask_openai_question(f"Paraphrase the follow 'What is the purpose of this visit?'")
+        return 'And the purpose of your visit?'
 
     elif 'working_purpose' not in conversation_state['user_details']:
         conversation_state['user_details']['working_purpose'] = request_messages[9].get('content')
@@ -265,7 +265,7 @@ def conversation_with_data(request):
         return jsonify(formatted_response)
 
 # Clear user details when clearing the chat
-@app.route("/conversation", methods=["GET", "POST"])
+@application.route("/conversation", methods=["GET", "POST"])
 @login_required
 def conversation():
     try:
@@ -282,11 +282,11 @@ def conversation():
 
 
 ##AUTH
-@app.route('/login')
+@application.route('/login')
 def login():
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
+@application.route('/login', methods=['POST'])
 def login_post():
     # login code goes here
     email = request.form.get('email')
@@ -306,4 +306,4 @@ def login_post():
     return redirect(url_for('profile'))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    application.run(port=3000)

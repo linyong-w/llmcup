@@ -161,7 +161,8 @@ def ask_local_question(question):
 
     result = qa({"question": question, "chat_history": chat_history})
 
-    chat_history.append((question, result["answer"]))
+    # chat_history.append((question, result["answer"]))
+    chat_history = [(question, result["answer"])]
     # chat_history = chat_history + "\n" + chat_history
     
     print(f"This is the chat history:{chat_history}")

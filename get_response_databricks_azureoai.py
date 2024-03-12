@@ -21,7 +21,7 @@ def create_tf_serving_json(data):
   return {'inputs': {name: data[name].tolist() for name in data.keys()} if isinstance(data, dict) else data.tolist()}
 
 def score_model(dataset):
-  url = 'https://dbc-eb788f31-6c73.cloud.databricks.com/serving-endpoints/openai_03/invocations'
+  url = os.environ.get("DATABRICKS_ENDPOINT")
   headers = {'Authorization': f'Bearer {os.getenv("DATABRICKS_TOKEN")}', 'Content-Type': 'application/json'}
   ds_dict = {'dataframe_split': dataset.to_dict(orient='split')} if isinstance(dataset, pd.DataFrame) else create_tf_serving_json(dataset)
   data_json = json.dumps(ds_dict, allow_nan=True)

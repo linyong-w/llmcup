@@ -11,7 +11,7 @@ from flask_login import UserMixin
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from get_response import ask_local_question, ask_openai_question
+from get_response_databricks_azureoai import ask_local_question
 
 import uuid
 import time
@@ -110,6 +110,8 @@ conversation_state = {
     'user_details': {}
 }
 
+chat_history ={}
+
 def start_collecting_details():
     global conversation_state
     conversation_state['collecting_details'] = True
@@ -119,8 +121,9 @@ def stop_collecting_details():
     conversation_state['collecting_details'] = False
 
 def reset_user_details():
-    global conversation_state
+    global conversation_state, chat_history
     conversation_state['user_details'] = {}
+    chat_history = {}
 
 def extract_user_content(interactions):
     user_contents = [interaction['content'] for interaction in interactions if interaction['role'] == 'user']
@@ -132,17 +135,17 @@ def collect_user_details(request_messages):
     if 'username' not in conversation_state['user_details']:
         conversation_state['user_details']['username'] = request_messages[0].get('content')
         # next_response = ask_openai_question(f"Paraphrase the follow 'Hi {conversation_state['user_details']['username']}, What is your working position?'")
-        return f"Hi {conversation_state['user_details']['username']}, what is your current role?"
+        return f"Hi {conversation_state['user_details']['username']}, What is your current role?"
 
     elif 'working_position' not in conversation_state['user_details']:
         conversation_state['user_details']['working_position'] = request_messages[3].get('content')
         # next_response = ask_openai_question(f"Paraphrase the follow 'Where are you going to work at?'")
-        return 'Thank you! Where is the location of the job?'
+        return 'Thank you for your input, where are you going to work at?'
 
     elif 'working_location' not in conversation_state['user_details']:
         conversation_state['user_details']['working_location'] = request_messages[6].get('content')
         # next_response = ask_openai_question(f"Paraphrase the follow 'What is the purpose of this visit?'")
-        return 'And the purpose of your visit?'
+        return 'What is the purpose of this visit?'
 
     elif 'working_purpose' not in conversation_state['user_details']:
         conversation_state['user_details']['working_purpose'] = request_messages[9].get('content')
@@ -251,8 +254,8 @@ def conversation_with_data(request):
 
     # Get the last 'content' from the filtered messages
     last_user_content = user_messages[0] if user_messages else None
-
-    prompt_message = f"This is the response of the user. {last_user_content} \n\n If the answer is too long, try to put in point form."
+    prompt_message = last_user_content
+    # prompt_message = f"This is the response of the user. {last_user_content} \n\n If the answer is too long, try to put in point form."
 
     if 'working_purpose' not in conversation_state['user_details']:
         formatted_response = format_prediction(collect_user_details(request_messages))
